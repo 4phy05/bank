@@ -17,7 +17,7 @@ func TestTransferTx(t *testing.T) {
 
 	// 指定创建交易条数和每次交易的金额（这里分别是 5 和 10）
 	n := 5
-	ammount := int64(10)
+	amount := int64(10)
 
 	// 声明两个 chan 类型，接收 goroutine 并发过程中的结果
 	errs := make(chan error)
@@ -31,7 +31,7 @@ func TestTransferTx(t *testing.T) {
 			result, err := testStore.TransferTx(ctx, TransferTxParams{
 				FromAccountID: account1.ID,
 				ToAccountID:   account2.ID,
-				Amount:        ammount,
+				Amount:        amount,
 			})
 
 			// 将所有 goroutine 中得到的数据都存入事先声明的 chan 中
@@ -60,9 +60,9 @@ func TestTransferTx(t *testing.T) {
 		require.NotEmpty(t, transfer)
 		require.NotZero(t, transfer.ID)
 		require.NotZero(t, transfer.CreatedAt)
-		require.Equal(t, transfer.FromAccountID, account1.ID)
-		require.Equal(t, transfer.ToAccountID, account2.ID)
-		require.Equal(t, transfer.Amount, ammount)
+		require.Equal(t, account1.ID, transfer.FromAccountID)
+		require.Equal(t, account2.ID, transfer.ToAccountID)
+		require.Equal(t, amount, transfer.Amount)
 
 		// 根据 transfer 的 ID 去数据库查询是否创建记录成功
 		_, err = testStore.GetTransfer(context.Background(), transfer.ID)
@@ -75,11 +75,11 @@ func TestTransferTx(t *testing.T) {
 		require.NotEmpty(t, fromEntry)
 		require.NotZero(t, fromEntry.ID)
 		require.NotZero(t, fromEntry.CreatedAt)
-		require.Equal(t, fromEntry.AccountID, account1.ID)
-		require.Equal(t, fromEntry.Amount, -ammount)
+		require.Equal(t, account1.ID, fromEntry.AccountID)
+		require.Equal(t, -amount, fromEntry.Amount)
 
 		// 根据 fromEntry 的 ID 去数据库查询是否创建记录成功
-		_, err = testStore.GetEntry(context.Background(), fromEntry.AccountID)
+		_, err = testStore.GetEntry(context.Background(), fromEntry.ID)
 		// 判断是否没有错误产生
 		require.NoError(t, err)
 
@@ -89,11 +89,11 @@ func TestTransferTx(t *testing.T) {
 		require.NotEmpty(t, toEntry)
 		require.NotZero(t, toEntry.ID)
 		require.NotZero(t, toEntry.CreatedAt)
-		require.Equal(t, toEntry.AccountID, account2.ID)
-		require.Equal(t, toEntry.Amount, ammount)
+		require.Equal(t, account2.ID, toEntry.AccountID)
+		require.Equal(t, amount, toEntry.Amount)
 
 		// 根据 toEntry 的 ID 去数据库查询是否创建记录成功
-		_, err = testStore.GetEntry(context.Background(), toEntry.AccountID)
+		_, err = testStore.GetEntry(context.Background(), toEntry.ID)
 		// 判断是否没有错误产生
 		require.NoError(t, err)
 
@@ -101,13 +101,13 @@ func TestTransferTx(t *testing.T) {
 		fromAccount := result.FromAccount
 		// 检验非空、ID 字段是否和填入的相等
 		require.NotEmpty(t, fromAccount)
-		require.Equal(t, fromAccount.ID, account1.ID)
+		require.Equal(t, account1.ID, fromAccount.ID)
 
 		// 检验 result 中的 FromAccount 对象
 		toAccount := result.ToAccount
 		// 检验非空、ID 字段是否和填入的相等
 		require.NotEmpty(t, toAccount)
-		require.Equal(t, toAccount.ID, account2.ID)
+		require.Equal(t, account2.ID, toAccount.ID)
 
 		// 打印每次交易后每个账号的余额
 		fmt.Println(">> tx:", fromAccount.Balance, toAccount.Balance)
@@ -117,10 +117,10 @@ func TestTransferTx(t *testing.T) {
 		// 检验从 account1 转出的钱是否和转入 account2 的钱相等，都为正数且交易金额为每次交易金额的整数倍
 		require.Equal(t, diff1, diff2)
 		require.True(t, diff1 > 0)
-		require.True(t, diff1%ammount == 0)
+		require.True(t, diff1%amount == 0)
 
 		// 声明变量存放当前交易额为每次交易的多少倍，表示这是第几次交易
-		k := int(diff1 / ammount)
+		k := int(diff1 / amount)
 		// 检验此次交易是否不存在之前记录的交易中
 		require.NotContains(t, existed, k)
 		// 将每次为第几次交易成功存入 existed 中
@@ -131,13 +131,13 @@ func TestTransferTx(t *testing.T) {
 	updatedAccount1, err := testQueries.GetAccountForUpdate(context.Background(), account1.ID)
 	// 检验是否没产生错误，且是否最终减少金额为 n 倍每次交易金额
 	require.NoError(t, err)
-	require.Equal(t, updatedAccount1.Balance+int64(n)*ammount, account1.Balance)
+	require.Equal(t, updatedAccount1.Balance+int64(n)*amount, account1.Balance)
 
 	// 检验最终所有交易完成之后 account2 的账户余额
 	updatedAccount2, err := testQueries.GetAccountForUpdate(context.Background(), account2.ID)
 	// 检验是否没产生错误,且是否最终增加金额为 n 倍每次交易金额
 	require.NoError(t, err)
-	require.Equal(t, updatedAccount2.Balance-int64(n)*ammount, account2.Balance)
+	require.Equal(t, updatedAccount2.Balance-int64(n)*amount, account2.Balance)
 
 	// 打印最终交易后每个账号的余额
 	fmt.Println(">> after:", updatedAccount1.Balance, updatedAccount2.Balance)
@@ -152,7 +152,7 @@ func TestTransferTxDeadlock(t *testing.T) {
 
 	// 指定创建交易条数和每次交易的金额（这里分别是 5 和 10）
 	n := 10
-	ammount := int64(10)
+	amount := int64(10)
 
 	// 声明两个 chan 类型，接收 goroutine 并发过程中的结果
 	errs := make(chan error)
@@ -173,7 +173,7 @@ func TestTransferTxDeadlock(t *testing.T) {
 			_, err := testStore.TransferTx(ctx, TransferTxParams{
 				FromAccountID: fromAccountID,
 				ToAccountID:   toAccountID,
-				Amount:        ammount,
+				Amount:        amount,
 			})
 
 			// 将所有 goroutine 中得到的数据都存入事先声明的 chan 中
@@ -193,13 +193,13 @@ func TestTransferTxDeadlock(t *testing.T) {
 	updatedAccount1, err := testQueries.GetAccountForUpdate(context.Background(), account1.ID)
 	// 检验是否没产生错误，且是否最终余额是否没变
 	require.NoError(t, err)
-	require.Equal(t, updatedAccount1.Balance, account1.Balance)
+	require.Equal(t, account1.Balance, updatedAccount1.Balance)
 
 	// 检验最终所有交易完成之后 account2 的账户余额
 	updatedAccount2, err := testQueries.GetAccountForUpdate(context.Background(), account2.ID)
 	// 检验是否没产生错误,且是否最终余额是否没变
 	require.NoError(t, err)
-	require.Equal(t, updatedAccount2.Balance, account2.Balance)
+	require.Equal(t, account2.Balance, updatedAccount2.Balance)
 
 	// 打印最终交易后每个账号的余额
 	fmt.Println(">> after:", updatedAccount1.Balance, updatedAccount2.Balance)
