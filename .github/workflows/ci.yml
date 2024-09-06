@@ -1,0 +1,31 @@
+# 设置 worflow 的名称，会在 github 的 Action 界面展示
+name: ci-test
+
+# 定义可以触发此工作流的事件
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  test:
+    # 指定该 job 的名称
+    name: Test
+    # 指定的 runner
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v4
+      with:
+        go-version: ^1.19
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v4
+
+    - name: Test
+      # 执行 Makefile 中定义好的命令， make test 实现 go test -v -cover ./... 的效果
+      run: make test
