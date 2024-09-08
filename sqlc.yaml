@@ -10,5 +10,6 @@ sql:
         sql_package: "pgx/v4" # 指定的数据库驱动包，sql包
         emit_json_tags: true # 允许将 JSON 标签添加到结构体中
         emit_prepared_queries: false # 是否生成与准备好的语句一起使用的代码
-        emit_interface: false # 是否为生成的包生成查询器接口
+        emit_interface: true # 是否为生成的包生成查询器接口
         emit_exact_table_names: false # 是否将表名复数化用作模型结构的名称
+        emit_empty_slices: true # 是否允许分页查询时出现空切片

@@ -9,25 +9,28 @@ import (
 )
 
 // Store 提供所有方法单独或者在所有交易中组合执行数据库查询
-type Store struct {
+type Store interface {
+	Querier
+	TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error)
+}
+
+// SQLStore 提供所有方法单独或者在所有交易中组合执行 SQL查询
+type SQLStore struct {
 	*Queries
 	// 为了能够创建一个数据库的事务
 	connPool *pgxpool.Pool
 }
 
 // NewStore 创建一个 Store 对象
-func NewStore(connPool *pgxpool.Pool) *Store {
-	if connPool == nil {
-		panic("cannot connect")
-	}
-	return &Store{
+func NewStore(connPool *pgxpool.Pool) Store {
+	return &SQLStore{
 		Queries:  New(connPool),
 		connPool: connPool,
 	}
 }
 
 // execTx 	事务的执行一个操作并基于错误判断提交还是回滚操作
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 	// 开启一个新的事务
 	tx, err := store.connPool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -70,7 +73,7 @@ type TransferTxResult struct {
 }
 
 // TransferTx 从一个账号到另一个账号执行一个交易，在一个事务中创建一条交易记录和账户条目并且更新账户余额
-func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
+func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	// 声明一个空的 TransferTxResult 的变量储存交易事务的结果
 	var result TransferTxResult
 
