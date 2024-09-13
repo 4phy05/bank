@@ -5,13 +5,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 )
 
 // 声明一个创建账户请求的结构体，接收用户的请求
 type createAccountRequest struct {
 	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=USD EUR"`
+	Currency string `json:"currency" binding:"required,currency"`
 }
 
 // 为 Server 对象添加 createAccount 功能，Server 接收到用户请求，进行创建账户
@@ -32,8 +33,18 @@ func (server *Server) createAccount(ctx *gin.Context) {
 
 	// 调用 Server.store.CreateAccount 创建账户
 	account, err := server.store.CreateAccount(ctx, arg)
-	// 若创建账户时产生错误，则是数据库内部出错返回 500 状态码和 JSON 格式的错误信息
+	// 若创建账户时产生错误，则是可能是数据库内部出错或者违反约束
 	if err != nil {
+		// 若出现错误，尝试将错误转换为 *pgconn.PgError 类型
+		if pqErr, ok := err.(*pgconn.PgError); ok {
+			// 根据返回的状态码，返回 403 状态码和 JSON 格式的错误信息
+			switch pqErr.Code {
+			case "23505", "23503":
+				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			}
+		}
+		// 数据库内部出错，返回 500 状态码和 JSON 格式的错误信息
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

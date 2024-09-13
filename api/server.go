@@ -4,6 +4,8 @@ import (
 	db "SimpleBank/db/sqlc"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 )
 
 // Server 为银行服务提供所有的 HTTP 请求
@@ -19,6 +21,12 @@ func NewServer(store db.Store) *Server {
 	server := &Server{store: store}
 	router := gin.Default()
 
+	// 调用 binding.Validator.Engine 获取 Gin 当前使用的 validator 引擎，将其转换为 *validator.Validate 类型
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		// 使用 Gin 注册自定义的 validator，在指定的需要验证的 tag 上，进行验证
+		v.RegisterValidation("currency", validCurrency)
+	}
+
 	// 为 router 添加路由处理
 	// 创建账户
 	router.POST("/accounts", server.createAccount)
@@ -26,6 +34,10 @@ func NewServer(store db.Store) *Server {
 	router.GET("/accounts/:id", server.getAccount)
 	// 分页展示账户
 	router.GET("/accounts", server.listAccount)
+	// 进行账户之间的交易
+	router.POST("/transfers", server.createTransfer)
+	// 创建用户
+	router.POST("/users", server.createUser)
 
 	// 将配置好的 router 配置到 Server 上
 	server.router = router

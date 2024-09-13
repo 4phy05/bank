@@ -113,7 +113,7 @@ func TestGetAccountAPI(t *testing.T) {
 
 			// 新建新 store
 			store := mockdb.NewMockStore(ctrl)
-			// 调用 tc.buildStubs 传入上面的 store， 创建 stubs
+			// 调用 tc.buildStubs 传入上面的 store ，创建 stubs
 			tc.buildStubs(store)
 
 			// 启动测试 HTTP 服务器并发送 GetAccountForUpdate 请求

@@ -11,9 +11,11 @@ import (
 )
 
 func createRandomAccount(t *testing.T) Account {
-	// 使用 util 包中编写的随机函数生成测试用例
+	// 先创建一个 user
+	user := createRandomUser(t)
+	// 使用 util 包中编写的随机函数和 user.Username 生成测试用例
 	arg := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}

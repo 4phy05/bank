@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -46,8 +47,13 @@ func RandomMoney() int64 {
 
 // RandomCurrency 生成 EUR/USD/CAD 三种货币类型的随机一种
 func RandomCurrency() string {
-	currencies := []string{"EUR", "USD", "CAD"}
+	currencies := []string{EUR, USD, CAD}
 	n := len(currencies)
 
 	return currencies[rand.Intn(n)]
+}
+
+// RandomEmail 生成一个随机的电子邮箱
+func RandomEmail() string {
+	return fmt.Sprintf("%s@email.com", RandomString(6))
 }
